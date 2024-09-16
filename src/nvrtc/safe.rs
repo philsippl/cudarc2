@@ -92,6 +92,14 @@ pub fn compile_ptx_with_opts<S: AsRef<str>>(
     prog.compile(opts)
 }
 
+pub fn compile_ptx_with_string_opts<S: AsRef<str>>(
+    src: S,
+    opts: &[String],
+) -> Result<Ptx, CompileError> {
+    let prog = Program::create(src)?;
+    prog.compile_with_string_options(opts)
+}
+
 pub(crate) struct Program {
     prog: sys::nvrtcProgram,
 }
@@ -104,14 +112,17 @@ impl Program {
 
     pub(crate) fn compile(self, opts: CompileOptions) -> Result<Ptx, CompileError> {
         let options = opts.build();
+        self.compile_with_string_options(&options)
+    }
 
-        unsafe { result::compile_program(self.prog, &options) }.map_err(|e| {
+    pub(crate) fn compile_with_string_options(self, opts: &[String]) -> Result<Ptx, CompileError> {
+        unsafe { result::compile_program(self.prog, &opts) }.map_err(|e| {
             let log_raw = unsafe { result::get_program_log(self.prog) }.unwrap();
             let log_ptr = log_raw.as_ptr();
             let log = unsafe { CStr::from_ptr(log_ptr) }.to_owned();
             CompileError::CompileError {
                 nvrtc: e,
-                options,
+                options: opts,
                 log,
             }
         })?;
