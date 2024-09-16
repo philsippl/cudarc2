@@ -122,7 +122,7 @@ impl Program {
             let log = unsafe { CStr::from_ptr(log_ptr) }.to_owned();
             CompileError::CompileError {
                 nvrtc: e,
-                options: opts,
+                options: opts.to_vec(),
                 log,
             }
         })?;
